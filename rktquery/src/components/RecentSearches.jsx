@@ -1,47 +1,40 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import SearchBar from "./SearchBar";
 import CurrentWeather from "./CurrentWeather";
+import { addSearch, setSearches } from "../features/RecentSearchesSlice";
 
 const RecentSearches = () => {
   const [coordinates, setCoordinates] = useState(null);
   const [unit, setUnit] = useState("metric");
-  const [recentSearches, setRecentSearches] = useState([]);
+  const recentSearches = useSelector((state) => state.recentSearches.searches);
+  const dispatch = useDispatch();
 
+  // Load recent searches from localStorage on component mount
   useEffect(() => {
-    const storedSearches =
-      JSON.parse(localStorage.getItem("recentSearches")) || [];
-    setRecentSearches(storedSearches);
-  }, []);
+    const storedSearches = localStorage.getItem("recentSearches");
+    if (storedSearches) {
+      dispatch(setSearches(JSON.parse(storedSearches)));
+    }
+  }, [dispatch]);
+
+  // Update localStorage whenever recentSearches changes
+  useEffect(() => {
+    localStorage.setItem("recentSearches", JSON.stringify(recentSearches));
+  }, [recentSearches]);
 
   useEffect(() => {
     if (coordinates) {
-      addRecentSearch(coordinates.name);
+      dispatch(addSearch(coordinates)); // Save the full city data
     }
-  }, [coordinates]);
+  }, [coordinates, dispatch]);
 
-  const handleCitySelected = (coords) => {
-    setCoordinates(coords);
+  const handleCitySelected = (cityData) => {
+    setCoordinates({ lat: cityData.lat, lon: cityData.lon, name: cityData.name });
   };
 
-  const handleRecentSearchClick = (cityName) => {
-    const city = recentSearches.find((search) => search === cityName);
-    if (city) {
-      const coords = { name: city };
-      handleCitySelected(coords);
-    }
-  };
-
-  const addRecentSearch = (cityName) => {
-    setRecentSearches((prevSearches) => {
-      const updatedSearches = [
-        cityName,
-        ...prevSearches.filter((search) => search !== cityName),
-      ];
-      const newSearches = updatedSearches.slice(0, 5);
-
-      localStorage.setItem("recentSearches", JSON.stringify(newSearches));
-      return newSearches;
-    });
+  const handleRecentSearchClick = (cityData) => {
+    handleCitySelected(cityData);
   };
 
   const toggleUnit = () => {

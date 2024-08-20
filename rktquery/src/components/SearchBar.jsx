@@ -7,13 +7,10 @@ function SearchBar({ onCitySelected, recentSearches, onRecentSearchClick }) {
   const [error, setError] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const { data: cityData, error: cityError } = useGetCityCoordinatesQuery(
-    query,
-    {
-      skip: !query,
-      refetchOnReconnect: true,
-    }
-  );
+  const { data: cityData, error: cityError } = useGetCityCoordinatesQuery(query, {
+    skip: !query,
+    refetchOnReconnect: true,
+  });
 
   useEffect(() => {
     if (cityError) {
@@ -32,7 +29,6 @@ function SearchBar({ onCitySelected, recentSearches, onRecentSearchClick }) {
   };
 
   const handleSearch = () => {
-    console.log(query);
     if (!query) {
       setError("Please enter a city name.");
       return;
@@ -43,10 +39,10 @@ function SearchBar({ onCitySelected, recentSearches, onRecentSearchClick }) {
       return;
     }
 
-    const selectedCity = cityData[0];
+    const selectedCity = cityData[0]; // Assuming the first result is the desired one
 
     if (selectedCity) {
-      onCitySelected(selectedCity);
+      onCitySelected(selectedCity); // Pass the full city data
       setQuery(""); // Clear the input field
       setShowDropdown(false); // Hide dropdown
     } else {
@@ -55,18 +51,18 @@ function SearchBar({ onCitySelected, recentSearches, onRecentSearchClick }) {
   };
 
   const handleKeyDown = (event) => {
-    console.log(event.key);
-
-    if (event === "Enter") {
-      console.log("event");
+    if (event.key === "Enter") {
       handleSearch();
     }
   };
 
-  const handleDropdownItemClick = (cityName) => {
-    setQuery(cityName);
+  const handleDropdownItemClick = (city, event) => {
+    event.stopPropagation();
+    event.preventDefault();
+
+    setQuery(city.name);
     setShowDropdown(false);
-    handleKeyDown("Enter");
+    onRecentSearchClick(city);
   };
 
   return (
@@ -77,7 +73,7 @@ function SearchBar({ onCitySelected, recentSearches, onRecentSearchClick }) {
         value={query}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => setShowDropdown(true)}
+        onFocus={() => setShowDropdown(recentSearches.length > 0)}
         onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
         className="p-2 border border-gray-300 rounded-md w-full"
       />
@@ -93,10 +89,10 @@ function SearchBar({ onCitySelected, recentSearches, onRecentSearchClick }) {
           {recentSearches.map((search, index) => (
             <li
               key={index}
-              onClick={() => handleDropdownItemClick(search)}
+              onClick={(event) => handleDropdownItemClick(search, event)}
               className="p-2 cursor-pointer hover:bg-gray-100"
             >
-              {search}
+              {search.name}
             </li>
           ))}
         </ul>
